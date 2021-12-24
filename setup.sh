@@ -34,6 +34,10 @@ function main() {
     addSSHKey "${username}" "${sshKey}"
     changeSSHConfig
     setupUfw
+    setupPM2
+    read -rp $'Domain Name for nginx config and SSL certbot:\n' domain
+    read -rp $'Email for SSL certbot:\n' email
+    setupNginx "${username}" "${domain}" "${email}"
 
     if ! hasSwap; then
         setupSwap

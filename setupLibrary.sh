@@ -56,6 +56,45 @@ function setupUfw() {
     yes y | sudo ufw enable
 }
 
+function setupPM2() {
+    sudo apt install curl 
+    curl https://raw.githubusercontent.com/creationix/nvm/master/install.sh | bash
+    source ~/.profile
+    nvm install 16.2.0
+    source ~/.profile
+    sudo npm install pm2 -g
+}
+
+function setupNginx() {
+    local username=${1}
+    local domain=${2}
+    local email=${3}
+
+    sudo apt update
+    sudo apt install nginx -y
+    sudo ufw allow 'Nginx HTTP'
+    sudo systemctl enable nginx
+    # sudo mkdir -p "/var/www/${domain}/html"
+    # sudo chown -R $username:$username "/var/www/${domain}/html"
+    # sudo chmod -R 755 "/var/www/${domain}"
+    sudo cat << EOF >> /etc/nginx/sites-available/${domain}
+        server {
+            server_name ${domain} www.${domain};
+
+        location / {
+            proxy_set_header Host \$host;
+            proxy_set_header X-Real-IP \$remote_addr;
+            proxy_pass http://localhost:3000;
+        }
+    }
+EOF
+    sudo ln -s "/etc/nginx/sites-available/${domain}" /etc/nginx/sites-enabled/
+    sudo systemctl restart nginx
+    sudo apt-get install certbot -y
+    sudo apt-get install python3-certbot-nginx
+    sudo certbot --nginx -d $domain -d www.$domain -m $email --agree-tos --noninteractive
+}
+
 # Create the swap file based on amount of physical memory on machine (Maximum size of swap is 4GB)
 function createSwap() {
    local swapmem=$(($(getPhysicalMemory) * 2))
