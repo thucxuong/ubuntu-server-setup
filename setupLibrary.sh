@@ -57,12 +57,14 @@ function setupUfw() {
 }
 
 function setupPM2() {
-    sudo apt install curl 
-    curl https://raw.githubusercontent.com/creationix/nvm/master/install.sh | bash
-    source ~/.profile
-    nvm install 16.2.0
-    source ~/.profile
-    sudo npm install pm2 -g
+    local username=${1}
+    
+    execAsUser "${username}" "sudo apt install curl"
+    execAsUser "${username}" "curl https://raw.githubusercontent.com/creationix/nvm/master/install.sh | bash"
+    execAsUser "${username}" "source ~/.profile"
+    execAsUser "${username}" "nvm install 16.2.0"
+    execAsUser "${username}" "source ~/.profile"
+    execAsUser "${username}" "sudo npm install pm2 -g"
 }
 
 function setupNginx() {
@@ -70,10 +72,10 @@ function setupNginx() {
     local domain=${2}
     local email=${3}
 
-    sudo apt update
-    sudo apt install nginx -y
-    sudo ufw allow 'Nginx HTTP'
-    sudo systemctl enable nginx
+    execAsUser "${username}" "sudo apt update"
+    execAsUser "${username}" "sudo apt install nginx -y"
+    execAsUser "${username}" "sudo ufw allow 'Nginx HTTP'"
+    execAsUser "${username}" "sudo systemctl enable nginx"
     # sudo mkdir -p "/var/www/${domain}/html"
     # sudo chown -R $username:$username "/var/www/${domain}/html"
     # sudo chmod -R 755 "/var/www/${domain}"
@@ -88,11 +90,12 @@ function setupNginx() {
         }
     }
 EOF
-    sudo ln -s "/etc/nginx/sites-available/${domain}" /etc/nginx/sites-enabled/
-    sudo systemctl restart nginx
-    sudo apt-get install certbot -y
-    sudo apt-get install python3-certbot-nginx
-    sudo certbot --nginx -d $domain -d www.$domain -m $email --agree-tos --noninteractive
+    sudo chown $username:$username "/etc/nginx/sites-available/${domain}"
+    execAsUser "${username}" "sudo ln -s /etc/nginx/sites-available/${domain} /etc/nginx/sites-enabled/"
+    execAsUser "${username}" "sudo systemctl restart nginx"
+    execAsUser "${username}" "sudo apt-get install certbot -y"
+    execAsUser "${username}" "sudo apt-get install python3-certbot-nginx"
+    execAsUser "${username}" "sudo certbot --nginx -d $domain -d www.$domain -m $email --agree-tos --noninteractive"
 }
 
 # Create the swap file based on amount of physical memory on machine (Maximum size of swap is 4GB)
